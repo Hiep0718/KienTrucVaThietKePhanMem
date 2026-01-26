@@ -14,7 +14,6 @@ public class PaymentService {
     public String processPayment(String orderId) {
         System.out.println(LocalDateTime.now() + " --- Đang gọi cổng thanh toán cho đơn: " + orderId + " ---");
 
-        // Giả lập lỗi ngẫu nhiên (50% lỗi) để bạn thấy nó retry
         if (new Random().nextBoolean()) {
             System.err.println("!!! Lỗi kết nối mạng (Simulated Error) !!!");
             throw new RuntimeException("Payment Gateway Timeout");

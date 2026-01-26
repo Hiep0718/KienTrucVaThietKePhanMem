@@ -5,8 +5,8 @@ server:
 resilience4j:
   retry:
     instances:
-      paymentApi:              # Tên c?a c?u hình retry này
-        maxRetryAttempts: 3    # Th? l?i t?i ?a 3 l?n
-        waitDuration: 2s       # Ch? 2 giây gi?a các l?n th?
+      paymentApi:
+        maxRetryAttempts: 3
+        waitDuration: 2s
         retryExceptions:
-          - java.lang.RuntimeException # Ch? retry khi g?p l?i Runtime
+          - java.lang.RuntimeException
