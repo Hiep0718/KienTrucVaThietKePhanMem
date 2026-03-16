@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microkernel CMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface-hover: #22263a;
+            --border: #2a2e3f;
+            --primary: #6c63ff;
+            --primary-hover: #5a52e0;
+            --danger: #ff4d6a;
+            --danger-hover: #e0364f;
+            --text: #e4e6f0;
+            --text-secondary: #8b8fa7;
+            --success: #34d399;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), #a78bfa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: .5rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: .95rem;
+        }
+
+        /* ---- Stats Panel ---- */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .stat-card.wide {
+            grid-column: span 2;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(108,99,255,.15);
+        }
+
+        .stat-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card .label {
+            font-size: .85rem;
+            color: var(--text-secondary);
+            margin-top: .35rem;
+        }
+
+        /* ---- Form ---- */
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-card h2 {
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .form-row {
+            display: flex;
+            gap: .75rem;
+            margin-bottom: .75rem;
+        }
+
+        input, textarea {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .7rem 1rem;
+            font-size: .9rem;
+            color: var(--text);
+            font-family: inherit;
+            transition: border-color .2s;
+            resize: vertical;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            padding: .7rem 1.5rem;
+            font-size: .9rem;
+            transition: background .2s, transform .1s;
+        }
+
+        button:active { transform: scale(.97); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            padding: .45rem .9rem;
+            font-size: .8rem;
+        }
+
+        .btn-danger:hover { background: var(--danger-hover); }
+
+        /* ---- Posts List ---- */
+        .posts-section h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .post-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: .75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            animation: fadeIn .3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .post-card:hover {
+            border-color: var(--primary);
+        }
+
+        .post-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: .35rem;
+        }
+
+        .post-info p {
+            font-size: .88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .post-meta {
+            font-size: .75rem;
+            color: var(--text-secondary);
+            margin-top: .4rem;
+            opacity: .7;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 3rem 1rem;
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+        }
+
+        /* ---- Architecture Badge ---- */
+        .arch-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: rgba(108,99,255,.12);
+            border: 1px solid rgba(108,99,255,.25);
+            border-radius: 20px;
+            padding: .3rem .85rem;
+            font-size: .75rem;
+            color: var(--primary);
+            margin-top: .6rem;
+        }
+        /* ---- Plugins List ---- */
+        .plugins-section {
+            margin-bottom: 2rem;
+        }
+        
+        .plugin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plugin-info {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Microkernel CMS</h1>
+            <p>A minimal Content Management System built with the Core &amp; Plugin architecture</p>
+        </header>
+
+        <!-- Plugins Management (Core) -->
+        <div class="plugins-section">
+            <h2>🔌 Installed Plugins</h2>
+            <div id="pluginsList" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- Stats Panel (from Plugins) -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="value" id="totalPosts">0</div>
+                <div class="label">Total Posts</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="avgTitleLen">0</div>
+                <div class="label">Avg Title Length</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="totalWords">0</div>
+                <div class="label">Total Words</div>
+            </div>
+            <div class="stat-card wide">
+                <div class="value" id="latestTitle">-</div>
+                <div class="label" id="lastModifiedLabel">Recently Added</div>
+            </div>
+        </div>
+
+        <!-- Create Post Form (Core) -->
+        <div class="form-card">
+            <h2>Create New Post</h2>
+            <div class="form-row">
+                <input type="text" id="postTitle" placeholder="Post title..." />
+            </div>
+            <div class="form-row">
+                <textarea id="postContent" rows="3" placeholder="Write your content..."></textarea>
+            </div>
+            <button class="btn-primary" id="createBtn">Create Post</button>
+        </div>
+
+        <!-- Posts List (Core) -->
+        <div class="posts-section">
+            <h2>All Posts</h2>
+            <div id="postsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+
+        // ==================
+        // Fetch & Render
+        // ==================
+        async function fetchPlugins() {
+            const res = await fetch(`${API}/plugins`);
+            const plugins = await res.json();
+            renderPlugins(plugins);
+        }
+
+        async function fetchPosts() {
+            const res = await fetch(`${API}/posts`);
+            const posts = await res.json();
+            renderPosts(posts);
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${API}/stats`);
+                if (!res.ok) throw new Error('Plugin disabled');
+                const data = await res.json();
+                document.getElementById('totalPosts').textContent = data.totalPosts;
+                document.getElementById('avgTitleLen').textContent = data.averageTitleLength;
+            } catch (err) {
+                document.getElementById('totalPosts').textContent = '-';
+                document.getElementById('avgTitleLen').textContent = '-';
+            }
+
+            try {
+                const res = await fetch(`${API}/wordcount`);
+                if (!res.ok) throw new Error('Plugin disabled');
+                const data = await res.json();
+                document.getElementById('totalWords').textContent = data.totalWords;
+            } catch (err) {
+                document.getElementById('totalWords').textContent = '-';
+            }
+
+            try {
+                const res = await fetch(`${API}/lastmodified`);
+                if (!res.ok) throw new Error('Plugin disabled');
+                const data = await res.json();
+                document.getElementById('latestTitle').textContent = data.latestTitle;
+                
+                if (data.recentlyAddedAt) {
+                    const dateDesc = new Date(data.recentlyAddedAt).toLocaleString();
+                    document.getElementById('lastModifiedLabel').textContent = `Added at: ${dateDesc}`;
+                } else {
+                    document.getElementById('lastModifiedLabel').textContent = 'Recently Added';
+                }
+            } catch (err) {
+                document.getElementById('latestTitle').textContent = '-';
+                document.getElementById('lastModifiedLabel').textContent = 'Recently Added';
+            }
+        }
+
+        function renderPlugins(plugins) {
+            const container = document.getElementById('pluginsList');
+            if (plugins.length === 0) {
+                container.innerHTML = '<div class="empty-state">No plugins loaded.</div>';
+                return;
+            }
+            container.innerHTML = plugins.map(plugin => `
+                <div class="plugin-card">
+                    <div class="plugin-info">
+                        <div class="status-dot ${plugin.active ? 'active' : ''}"></div>
+                        <span style="font-weight: 600;">${escapeHtml(plugin.name)}</span>
+                    </div>
+                    <button class="${plugin.active ? 'btn-danger' : 'btn-primary'}" 
+                            onclick="togglePlugin('${plugin.name}')"
+                            style="padding: .4rem .8rem; font-size: .8rem;">
+                        ${plugin.active ? 'Disable' : 'Enable'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('postsList');
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="empty-state">No posts yet. Create your first post above!</div>';
+                return;
+            }
+            container.innerHTML = posts.map(post => `
+                <div class="post-card">
+                    <div class="post-info">
+                        <h3>${escapeHtml(post.title)}</h3>
+                        <p>${escapeHtml(post.content)}</p>
+                        <div class="post-meta">ID: ${post.id} · ${new Date(post.createdAt).toLocaleString()}</div>
+                    </div>
+                    <button class="btn-danger" onclick="deletePost(${post.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // ==================
+        // Actions
+        // ==================
+        async function createPost() {
+            const title = document.getElementById('postTitle').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+            if (!title || !content) return alert('Please fill in both fields.');
+
+            await fetch(`${API}/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content })
+            });
+
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+            refresh();
+        }
+
+        async function deletePost(id) {
+            await fetch(`${API}/posts/${id}`, { method: 'DELETE' });
+            refresh();
+        }
+
+        async function togglePlugin(name) {
+            await fetch(`${API}/plugins/${name}/toggle`, { method: 'POST' });
+            refresh();
+        }
+
+        function refresh() {
+            fetchPlugins();
+            fetchPosts();
+            fetchStats();
+        }
+
+        // ==================
+        // Init
+        // ==================
+        document.getElementById('createBtn').addEventListener('click', createPost);
+        refresh();
+    </script>
+</body>
+</html>
