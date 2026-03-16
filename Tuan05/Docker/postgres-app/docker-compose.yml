@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db-postgres:
+    image: postgres:15 # Sử dụng phiên bản 15 (ổn định và phổ biến)
+    container_name: my_postgres_container
+    environment:
+      - POSTGRES_USER=user         # Username theo yêu cầu
+      - POSTGRES_PASSWORD=password # Password theo yêu cầu
+      - POSTGRES_DB=mydb           # Tên database khởi tạo
+    ports:
+      - "5432:5432"                # Cổng mặc định của Postgres là 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Lưu dữ liệu bền vững
+
+volumes:
+  postgres_data: # Tạo một volume để dữ liệu không bị mất khi xóa container
