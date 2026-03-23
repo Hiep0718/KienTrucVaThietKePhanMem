@@ -1,0 +1,29 @@
+# --- STAGE 1: Build môi trường ---
+# Sử dụng base image Golang để build ứng dụng (image này nặng)
+FROM golang:1.21 AS builder
+
+# Thiết lập thư mục làm việc
+WORKDIR /app
+
+# Copy mã nguồn vào
+COPY main.go .
+
+# Build ứng dụng với CGO_ENABLED=0 để tạo standalone binary (không phụ thuộc thư viện C)
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server main.go
+
+# --- STAGE 2: Runtime môi trường ---
+# Bắt đầu một stage mới từ base image siêu nhẹ (Alpine rỗng, cực kỳ nhẹ ~5MB)
+FROM alpine:latest
+
+# Cài đặt chứng chỉ SSL trong trường hợp app cần gọi API HTTPS (Best practice)
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+# CHỈ COPY file thực thi đã được build từ STAGE 1 (builder) sang STAGE 2
+COPY --from=builder /app/server .
+
+EXPOSE 8080
+
+# Chạy ứng dụng
+CMD ["./server"]
